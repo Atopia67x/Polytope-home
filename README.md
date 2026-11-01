@@ -23,7 +23,7 @@ A visual and interactive project dedicated to the <mark>120-cell</mark>~ \
 Hand-derived ***math*** · AI-assisted ***code*** \
 **核心数学由作者手推**, AI 主要用于代码框架与实现
 
-### 功能实现与短期计划（2026.10）
+### 功能实现与短期计划 (2026.10)
 请参考[开发日志](./开发日志.md), 可运行的 [html 源代码](./index.html)
 
 - [x] 创建 3D 引擎的页面 (10.1)
@@ -33,8 +33,9 @@ Hand-derived ***math*** · AI-assisted ***code*** \
 - [x] 引入 交互按钮 (10.17)
 - [x] 引入 多场景切换按钮 (10.17)
 - [x] [**拆分 工程文件**](./开发日志.md#v007-modularize) (10.24)
+- [x] 正在实践 RGP (Regular Polytope) 协议
+- [x] 正在尝试实现 通用的 高对称多胞形对称群 自动化计算
 - [ ] 重构 平移函数
-- [ ] 实现 通用的 高对称多胞形对称群 自动化计算
 - [ ] 其他 页面美术设计
 - [ ] 其他 可读性·可复用 的需求
 

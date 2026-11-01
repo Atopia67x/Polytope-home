@@ -3,7 +3,7 @@
  * 核心渲染, 接收 几何数据和变换矩阵, 生成 Three.js 的 Group
  */
 
-import * as THREE from 'three';
+import * as THREE from 'https:three';
 import { WHITE, lightenColor } from '../data/constants.js';
 import { affined } from '../core/transform.js';
 
@@ -34,7 +34,7 @@ export function showPoints(vertices, vertexColor, target) {
 // 生成几何体连线
 // target 为 { scene, spawnedGroups } 形式的承载对象
 export function makeShapeTransformed(source, scalar, rotator, translator, opts = {}, target) {
-  const [vList, eList, fList] = source;
+  const [ vList, eList, fList ] = source;
   const { scene, spawnedGroups } = target;
 
   /*

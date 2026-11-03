@@ -8,29 +8,29 @@
 // ============================================================
 export const WHITE = 0xffffff
 export const GRAY_ = 0xcccccc
-export const GRAY  = 0x888888
+export const GRAY = 0x888888
 export const BLACK = 0x000000
 
 const YELLOW_1 = 0xe8e23a
-const GREEN_1  = 0x8a9a5b
-const BLUE_1   = 0x7ec8D8
+const GREEN_1 = 0x8a9a5b
+const BLUE_1 = 0x7ec8D8
 const PURPLE_1 = 0xc9b8e0
 
 export const colorSet1 = [YELLOW_1, GREEN_1, BLUE_1, PURPLE_1, WHITE];
 
-export const GREEN_G  = 0xa8d88b
-export const WHITE_G  = 0xffffff
+export const GREEN_G = 0xa8d88b
+export const WHITE_G = 0xffffff
 export const PURPLE_G = 0xc9b8e0
-export const BLUE_G   = 0x8bcae8
+export const BLUE_G = 0x8bcae8
 export const YELLOW_G = 0xf5e6a3
-export const PINK_G   = 0xf0c8d8
+export const PINK_G = 0xf0c8d8
 
 // 颜色变亮
 // t: 0 不变, 1 全白
 export function lightenColor(c, t = 0.3) {
   const r = (c >> 16) & 0xff;
-  const g = (c >>  8) & 0xff;
-  const b =  c        & 0xff;
+  const g = (c >> 8) & 0xff;
+  const b = c & 0xff;
   const k = Math.max(0, Math.min(1, t));
   const R = Math.round(r + (255 - r) * k);
   const G = Math.round(g + (255 - g) * k);

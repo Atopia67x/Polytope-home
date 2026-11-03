@@ -6,11 +6,14 @@
 import * as THREE from 'three';
 
 import {
+  EPS,
+  dimensionSymbols,
   clamp,
   get3DReflectionMatrices,
   get4DReflectionMatrices,
-  generate3DBasicVec,
-  generate4DBasicVec
+  get3DBasicVec,
+  get4DBasicVec,
+  generateSymmtrySeqMatrix
 } from './polytopeGeometry.js';
 
 const RED = '\x1b[31m';
@@ -149,7 +152,88 @@ function makeSymmetryGroupList(schlafli, k) {
   return Infinity;
 }
 
-const dimensionSymbols = 'vefctpxzy';
+// 记忆化字典
+//const symmetryGroupCache = new Map();
+
+/**
+ * 生成 对称序列群 (Symmetry Sequence, SymmetrySeq) 列表 (仅适用于 n === 3 维)
+ * - 基于矩阵运算的轨道枚举 (数值去重硬枚举)
+ * @param {number[]} schlafli 施莱夫利符号
+ * @param {number} k 唯一环 所在的维数
+ * @returns {string[]} 对称序列群 列表 (e.g. ['', 'e', 've'])
+ * e.g. (schlafli=[3, 3, 3], k=1) : o3x3o3o
+ *      (schlafli=[4, 3, 3], k=3) : o4o3x3o
+ */
+
+/*export function makeSymmetryGroupList(schlafli, k) {
+  // 发生维度
+  const n = schlafli.length;
+  // 单环
+  const rings = new Array(n + 1).fill('o');
+  rings[k] = 'x';
+
+  // 基向量
+  const basicVec = get3DBasicVec(schlafli, rings);
+
+  const dims = dimensionSymbols.slice(0, n + 1);
+  
+  const is3D = basicVec.isVector3;
+  const res = []; // 去重序列
+  const seenCoords = []; // 记录已经存在的坐标
+  const queue = ['']; // 从空序列开始
+
+  // 辅助函数: 直接通过容差距离判等, 包容浮点误差
+  const isCoordSeen = (vec) => {
+    const EPS_Sq = EPS * EPS;
+
+    for (const v of seenCoords) {
+      if (is3D) {
+        if (v.distanceToSquared(vec) < EPS_Sq) return true;
+      } else {
+        if (v.distanceToSquared(vec) < EPS_Sq) return true; 
+      }
+    }
+    return false;
+  };
+
+  // 初始化环境
+  seenCoords.push(basicVec.clone());
+  res.push('');
+
+  let cur = 0;
+  while (queue.length > 0 && cur <= 1000) {
+    const currentSeq = queue.shift();
+
+    // 在当前序列尾部尝试加上所有允许的操作
+    for (const char of dims) {
+      // 剪枝: 防止连续两个相同的操作 (e.g. 'vv')
+      if (currentSeq.endsWith(char)) continue;
+      
+      // 合成新序列
+      const nextSeq = currentSeq + char;
+      const matrix = generateSymmtrySeqMatrix(schlafli, nextSeq);
+      
+      // 计算新坐标
+      const nextVec = basicVec.clone();
+      if (is3D) nextVec.applyMatrix3(matrix);
+      else nextVec.applyMatrix4(matrix);
+
+      // 去重: 距离在容差内, 放弃这个序列
+      if (isCoordSeen(nextVec)) {
+        continue;
+      }
+
+      // 记录新坐标, 保存该序列
+      seenCoords.push(nextVec);
+      res.push(nextSeq);
+      queue.push(nextSeq);
+      cur++;
+    }
+  }
+
+  return res;
+}*/
+
 /**
  * shiftSeqDim:
  * m维 对称序列 (Symmetry operation Sequence; Symmetry Seq) (向低维) 偏移k个维度
@@ -232,7 +316,7 @@ const shiftAndUpdateMax = (list, cur) => {
 
     return nv;
   }
-  
+
   const newList = list.map(mapDeep);
   if (maxinum === -Infinity) maxinum = cur;
 
@@ -337,57 +421,6 @@ function buildPosetList(schlafli) {
   return poset;
 }
 
-// 记忆化字典
-const seqmatrixCache = new Map();
-
-// 用于递归的函数
-function generateSeqToMatrix(matrices, schlafli, symmetrySeq) {
-  const Matrix = (schlafli.length === 2) ? THREE.Matrix3 : THREE.Matrix4
-
-  const key = `${schlafli.join(',')}_|_${symmetrySeq}` // e.g. '4,3_|_fev'
-
-  // 缓存 存在
-  if (seqmatrixCache.has(key)) {
-    return seqmatrixCache.get(key);
-  }
-  if (symmetrySeq.length === 0) {
-    const idt = new Matrix(); // 单位矩阵
-    seqmatrixCache.set(key, idt);
-    return idt;
-  }
-
-  const dims = dimensionSymbols;
-  const [first, rest] = [symmetrySeq.slice(0, 1), symmetrySeq.slice(1)];
-
-  const leftMatrix = matrices[dims.indexOf(first)];
-  const rightMatrix = generateSeqToMatrix(matrices, schlafli, rest);
-
-  // 附加了 浮点误差钳制 (Clamp)
-  const resMatrix = clamp(leftMatrix.clone().multiply(rightMatrix));
-  seqmatrixCache.set(key, resMatrix);
-
-  return resMatrix;
-}
-
-/**
- * 由对称序列 (symmetrySeq) 生成 总对称矩阵
- * @param {number[]} schlafli 施莱夫利符号
- * @param {string} symmetrySeq 对称序列
- * @returns {THREE.Matrix3 | THREE.Matrix4} 对称矩阵
- * 
- */
-// 用于外部调用的函数
-function generateSymmtrySeqMatrix(schlafli, symmetrySeq) {
-  if (schlafli.length !== 2 && schlafli.length !== 3) {
-    throw new Error(`${RED}schlafli 长度需为 2 或 3, 实际 ${schlafli.length}${RESET}`);
-  }
-
-  // 只需算一次矩阵 (Matrix, pl. Matrices)
-  const matrices = (schlafli.length === 2) ? get3DReflectionMatrices(schlafli) : get4DReflectionMatrices(schlafli);
-
-  return generateSeqToMatrix(matrices, schlafli, symmetrySeq);
-}
-
 const posetCache = new Map();
 /**
  * 生成偏序集 (Poset) 方法
@@ -437,6 +470,7 @@ export function buildPoset(schlafli) {
       vertexList: newVertexList
     }
   }
+
   posetCache.set(key, posetBuilder);
   return posetBuilder;
 }

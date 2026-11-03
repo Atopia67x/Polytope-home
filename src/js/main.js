@@ -25,7 +25,7 @@ import { setupUI, syncModeButtons } from './ui/controlsUI.js';
 // 引入 场景
 import { renderCIncremental, startAct, stopAct } from './view/sceneC.js';
 import { makeVScene } from './view/sceneV.js';
-import { makeFScene } from './view/sceneF.js';
+import { makeFScene, makeNewScene } from './view/sceneF.js';
 
 // ============================================================
 // a.1. 创建视图环境
@@ -108,7 +108,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 //showPoints([[0, 100, 100]], WHITE) // ???
 makeVScene(targetV);
-makeFScene(targetF);
+//makeFScene(targetF);
+makeNewScene([4, 3], ['x', 'x', 'x'], targetF)
 
 // 初始化录制 与 相机自动旋转
 setupRecorder(renderer, cameraC, controlsC);

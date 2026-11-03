@@ -8,7 +8,7 @@ const [YELLOW_1, GREEN_1, BLUE_1, PURPLE_1, WHITE] = colorSet1;
 
 import { Doe, Peg } from '../data/shapes.js';
 import { Scalar, Rotator, Translator } from '../core/transform.js';
-import { makeShapeTransformed } from '../core/renderer.js';
+import { makeShapeTransformed, makeShapeInCRPs } from '../core/renderer.js';
 
 export function makePegs(layer, target, ...ids) {
   let idName;
@@ -86,22 +86,22 @@ export function makePegs(layer, target, ...ids) {
 }
 
 export function makeFScene(target) {
-  /*makeShapeTransformed(
-    Peg,
-    Scalar(),
-    Rotator(),
-    Translator(),
-    {
-      colormode: 0,
-      colours: [WHITE, WHITE, WHITE],
-      showEdges: 1,
-      showVertices: 0,
-      name: 'white' + '0',
-    },
-    target,
-  );*/
   makePegs(0, target, 0); makePegs(0, target, 1);
   makePegs(1, target, 0); makePegs(1, target, 1); makePegs(1, target, 2); makePegs(1, target, 3); makePegs(1, target, 4);
   makePegs(2, target, 0); makePegs(2, target, 1); makePegs(2, target, 2); makePegs(2, target, 3); makePegs(2, target, 4);
   makePegs(3, target, 0, 0); makePegs(3, target, 0, 1); makePegs(3, target, 1, 0); makePegs(3, target, 1, 1);
+}
+
+export function makeNewScene(schlafli, rings, target) {
+  return makeShapeInCRPs(
+    schlafli, rings,
+    {
+      colormode: 0,
+      colours: YELLOW_1,
+      showEdges: 1,
+      showVertices: 0,
+      name: 'yellowPerfect',
+    },
+    target
+  );
 }

@@ -11,15 +11,18 @@ import * as THREE from 'three';
 
 import assert from 'node:assert';
 import {
-  get3DReflectionMatrices,
-  get4DReflectionMatrices,
-  generate3DBasicVec,
-  generate4DBasicVec
+  get3DBasicVec,
 } from '../js/core/polytopeGeometry.js';
 
 import {
-  buildPoset,
+  //makeSymmetryGroupList,
+  buildPoset
 } from '../js/core/polytopeSymmetry.js';
+
+import {
+  makeShapeInCRPs,
+  cleanPoset
+} from '../js/core/renderer.js';
 
 const DEG = 180 / Math.PI;
 const RED = '\x1b[31m';
@@ -149,6 +152,13 @@ function showSymmetryGroupList(schlafli, k) {
   return list;
 }
 
-console.log(buildPoset([4, 3])(generate3DBasicVec([4, 3], ['x', 'x', 'x'])));
+//console.log(buildPoset([4, 3])(get3DBasicVec([4, 3], ['x', 'x', 'x'])));
+//console.log(makeSymmetryGroupList([4, 3], 1))
+
+const schlafli = [4, 3], rings = ['x', 'x', 'x'];
+const basicVec = get3DBasicVec(schlafli, rings);
+const builder = buildPoset(schlafli);
+console.log(`未去重 Poset: `, schlafli, rings, builder(basicVec));
+console.log(`\n\n去重 Poset: `, schlafli, rings, cleanPoset(builder(basicVec)));
 
 console.log('\n全部测试执行完毕. ');

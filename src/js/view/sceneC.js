@@ -40,7 +40,7 @@ let shownCountC = 0;
 // 新建 Doe (261010 重构)
 function makeDoe(layer, target, id) {
   let scale, rotate, translate;
-
+  
   if (layer === 0) {
     return makeShapeTransformed(
       Doe,

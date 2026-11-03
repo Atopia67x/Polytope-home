@@ -4,7 +4,6 @@
  * 实现 生成 对称矩阵 (Reflection Matrix)
  */
 
-import { rmSync } from 'node:fs';
 import * as THREE from 'three';
 
 const RED = '\x1b[31m';
@@ -13,7 +12,9 @@ const BLUE = '\x1b[34m';
 const RESET = '\x1b[0m';
 
 // 浮点误差容差
-const EPS = 1e-8;
+export const EPS = 1e-10;
+
+export const dimensionSymbols = 'vefctpxzy';
 
 /**
  * 三角函数值 浮点 (Float) 误差钳制 (Clamp): 仅当 |v| 接近 1 (误差级) 时钳到 ±1, 仅当 |v| 接近 0 (误差级) 时钳到 0,
@@ -299,7 +300,7 @@ export function get3DReflectionNormalVecs(schlafli) {
   const { v, e } = affCoordVecs;
 
   const vV = new THREE.Vector3(0, 0, 1).normalize();
-  const vE = new THREE.Vector3(0, -v, e).normalize();
+  const vE = new THREE.Vector3(0, v, -e).normalize();
   const vF = new THREE.Vector3(e, -1, 0).normalize();
 
   return clamp([vV, vE, vF]);
@@ -317,9 +318,9 @@ export function get4DReflectionNormalVecs(schlafli) {
   const { v, e, f } = affCoordVecs;
 
   const vV = new THREE.Vector4(0, 0, 0, 1).normalize();
-  const vE = new THREE.Vector4(0, 0, -v, e).normalize();
+  const vE = new THREE.Vector4(0, 0, v, -e).normalize();
   const vF = new THREE.Vector4(0, e, -f, 0).normalize();
-  const vC = new THREE.Vector4(-f, 1, 0, 0).normalize();
+  const vC = new THREE.Vector4(f, -1, 0, 0).normalize();
 
   return clamp([vV, vE, vF, vC]);
 }
@@ -368,7 +369,7 @@ export function get4DReflectionMatrices(schlafli) {
   const [cM, sM] = [Math.cos(schls[0]), Math.sin(schls[0])];
   const [cMN, sMN] = [Math.cos(schls[1]), Math.sin(schls[1])];
   const [cMNP, sMNP] = [Math.cos(schls[2]), Math.sin(schls[2])];
-  // 附加 clamp三角函数值 浮点误差钳制
+  // 附加 clamp 三角函数值 浮点误差钳制
 
   const matrixV = new THREE.Matrix4().set(
     1, 0, 0, 0,
@@ -404,7 +405,8 @@ export function get4DReflectionMatrices(schlafli) {
  * @param {string[]} rings 环序列 e.g. ['x', 'o', 'o']
  * @returns {THREE.Vector3} 基向量
  */
-export function generate3DBasicVec(schlafli, rings) {
+
+export function get3DBasicVec(schlafli, rings) {
   if (schlafli.length !== 2) {
     throw new Error(`${RED}schlafli 长度需为 2, 实际 ${schlafli.length}${RESET}`);
   }
@@ -442,7 +444,7 @@ export function generate3DBasicVec(schlafli, rings) {
  * @param {string[]} rings 环序列 e.g. ['x', 'o', 'o', 'o']
  * @returns {THREE.Vector4} 基向量
  */
-export function generate4DBasicVec(schlafli, rings) {
+export function get4DBasicVec(schlafli, rings) {
   if (schlafli.length !== 3) {
     throw new Error(`${RED}schlafli 长度需为 3, 实际 ${schlafli.length}${RESET}`);
   }
@@ -473,4 +475,56 @@ export function generate4DBasicVec(schlafli, rings) {
   // basicVec = M⁻¹V
   const basicVec = V.clone().applyMatrix4(M.clone().invert());
   return clamp(basicVec);
+}
+
+
+// 记忆化字典
+const seqmatrixCache = new Map();
+
+// 用于递归迭代的函数
+function generateSeqToMatrix(matrices, schlafli, symmetrySeq) {
+  const Matrix = (schlafli.length === 2) ? THREE.Matrix3 : THREE.Matrix4
+
+  const key = `${schlafli.join(',')}_|_${symmetrySeq}` // e.g. '4,3_|_fev'
+
+  // 缓存 存在
+  if (seqmatrixCache.has(key)) {
+    return seqmatrixCache.get(key);
+  }
+  if (symmetrySeq.length === 0) {
+    const idt = new Matrix(); // 单位矩阵
+    seqmatrixCache.set(key, idt);
+    return idt;
+  }
+
+  const dims = dimensionSymbols;
+  const [first, rest] = [symmetrySeq.slice(0, 1), symmetrySeq.slice(1)];
+
+  const leftMatrix = matrices[dims.indexOf(first)];
+  const rightMatrix = generateSeqToMatrix(matrices, schlafli, rest);
+
+  // 附加了 浮点误差钳制 (Clamp)
+  const resMatrix = clamp(leftMatrix.clone().multiply(rightMatrix));
+  seqmatrixCache.set(key, resMatrix);
+
+  return resMatrix;
+}
+
+/**
+ * 由对称序列 (symmetrySeq) 生成 总对称矩阵
+ * @param {number[]} schlafli 施莱夫利符号
+ * @param {string} symmetrySeq 对称序列
+ * @returns {THREE.Matrix3 | THREE.Matrix4} 对称矩阵
+ * 
+ */
+// 用于外部调用的函数
+export function generateSymmtrySeqMatrix(schlafli, symmetrySeq) {
+  if (schlafli.length !== 2 && schlafli.length !== 3) {
+    throw new Error(`${RED}schlafli 长度需为 2 或 3, 实际 ${schlafli.length}${RESET}`);
+  }
+
+  // 只需算一次矩阵 (Matrix, pl. Matrices)
+  const matrices = (schlafli.length === 2) ? get3DReflectionMatrices(schlafli) : get4DReflectionMatrices(schlafli);
+
+  return generateSeqToMatrix(matrices, schlafli, symmetrySeq);
 }

@@ -30,12 +30,15 @@ export function affined(source) {
     vertex.x, edge.x, face.x, 0,
     vertex.y, edge.y, face.y, 0,
     vertex.z, edge.z, face.z, 0,
-    0,        0,      0,      1,
+    0, 0, 0, 1,
   ).invert();
 }
 
-// ---- 1. 缩放 (Scalar) 矩阵 生成函数 ----
-export function Scalar(aSource=[,,], mode='identity', k=1) {
+/**
+ * 1. 缩放 (Scalar) 矩阵 生成函数
+ * @returns {THREE.Matrix4} - 缩放矩阵
+ */
+export function Scalar(aSource, mode = 'identity', k = 1) {
   // 短路式 返回值
   if (mode === 'identity') {
     return new THREE.Matrix4().set(
@@ -66,40 +69,40 @@ export function Scalar(aSource=[,,], mode='identity', k=1) {
 
   if (mode === 'face') {
     return new THREE.Matrix4().set(
-      1, 0, k-1, 0,
-      0, 1, k-1, 0,
-      0, 0, k,   0,
-      0, 0, 0,   1,
+      1, 0, k - 1, 0,
+      0, 1, k - 1, 0,
+      0, 0, k, 0,
+      0, 0, 0, 1,
     ).transpose();
   }
   else if (mode === 'edge') {
     return new THREE.Matrix4().set(
-      1, k-1,    0, 0,
-      0, k,      0, 0,
-      0,(k-1)*a, 1, 0,
-      0, 0,      0, 1,
+      1, k - 1, 0, 0,
+      0, k, 0, 0,
+      0, (k - 1) * a, 1, 0,
+      0, 0, 0, 1,
     ).transpose();
   }
   else if (mode === 'vertex') {
     return new THREE.Matrix4().set(
-       k,      0, 0, 0,
-      (k-1)*c, 1, 0, 0,
-      (k-1)*b, 0, 1, 0,
-       0,      0, 0, 1,
+      k, 0, 0, 0,
+      (k - 1) * c, 1, 0, 0,
+      (k - 1) * b, 0, 1, 0,
+      0, 0, 0, 1,
     ).transpose();
   }
   else if (mode === 'triconvergency') {
     const alpha = Math.asin(PHI / SQ3);
     const theta_VE = Math.acos(cos_theta_VE);
-    const s = Math.sqrt(1 - k**2) / Math.tan(alpha) / Math.tan(theta_VE);
+    const s = Math.sqrt(1 - k ** 2) / Math.tan(alpha) / Math.tan(theta_VE);
 
     return new THREE.Matrix4().set(
-       -s+k,  -s,-s*a, 0,
-      1+s-k, 1+s, s*a, 0,
-          0,   0,   1, 0,
-          0,   0,   0, 1,
+      -s + k, -s, -s * a, 0,
+      1 + s - k, 1 + s, s * a, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
     )
-    .multiply(Scalar(Doe, 'edge', Math.sin(alpha)));
+      .multiply(Scalar(Doe, 'edge', Math.sin(alpha)));
   }
   else if (mode === 'biconvergency') {
     const alpha = 72 * Math.PI / 180;
@@ -108,29 +111,34 @@ export function Scalar(aSource=[,,], mode='identity', k=1) {
     const cos_theta_5VE = Math.cos(am);
     const d = cos_theta_5VE ** 2;
 
-    const s = -Math.sqrt(1 - k**2) / Math.tan(alpha) / Math.tan(theta_VF);
+    const s = -Math.sqrt(1 - k ** 2) / Math.tan(alpha) / Math.tan(theta_VF);
 
     return new THREE.Matrix4().set(
-       -s+k, -s+(k-1)*d,  -s, 0,
-          0,     1,        0, 0,
-      1+s-k,  s-(k-1)*d, 1+s, 0,
-          0,     0,        0, 1,
-    )
-    .multiply(Scalar(Doe, 'face', Math.sin(alpha)));
+      -s + k, -s + (k - 1) * d, -s, 0,
+      0, 1, 0, 0,
+      1 + s - k, s - (k - 1) * d, 1 + s, 0,
+      0, 0, 0, 1,
+    ).multiply(Scalar(Doe, 'face', Math.sin(alpha)));
   }
 }
 
-// 由编号数组 得到 平均向量, 回复Vector3
+/**
+ * 得到 平均向量, 回复Vector3
+ * @param {any[]} source 偏序集 列表
+ * @param {number[]} sets - 维面 下标列表
+ * @returns {THREE.Vector3} 平均向量
+ */
 export function vecToElement(source, sets) {
-  const [vList, eList, fList] = source;
+  const [ vertexList ] = source;
 
-  const vecList = sets.map(i => vList[i]);
+  const vecList = sets.map(i => {
+    const vi = vertexList[i];
+    return vi.isVector3 ? vi : new THREE.Vector3(vi[0], vi[1], vi[2]);
+  });
 
   let res = new THREE.Vector3(0, 0, 0);
   let cnt = 0;
-  for (const [x, y, z] of vecList) {
-    let vec = new THREE.Vector3(x, y, z);
-
+  for (const vec of vecList) {
     res = res.clone().multiplyScalar(cnt)
       .add(vec)
       .divideScalar(cnt + 1);
@@ -148,9 +156,15 @@ export function vecToElement(source, sets) {
   return res;
 }
 
-// 特定方向为基准 获取 VEF 三轴
+/**
+ * 特定方向为基准 获取 VEF 三轴
+ * @param {any[]} source 偏序集 列表
+ * @param {string} mode 获取方向的 维面 ('vertex' / 'edge' / 'face')
+ * @param {...any} ids 维面 下标列表
+ * @returns {THREE.Vector3[]} 维面 矢量
+ */
 export function getDirectionId(source, mode, ...ids) {
-  const [vList, eList, fList] = source;
+  const [vertexList, edgeList, faceList] = source;
 
   let id, id2 = 0;
   if (ids.length === 1) {
@@ -163,36 +177,34 @@ export function getDirectionId(source, mode, ...ids) {
   // 逻辑有待优化, 尤其是 id id2
   let face, edge, vertex;
   if (mode === 'face') {
-    face = fList[id];
+    face = faceList[id];
 
     edge = [...face, face[0]].slice(id2, 2);
     vertex = edge.slice(0, 1);
   }
   else if (mode === 'edge') {
-    edge = eList[id];
+    edge = edgeList[id];
     vertex = edge.slice(0, 1);
-    face = fList.filter(
+    face = faceList.filter(
       f => f.includes(edge[0]) && f.includes(edge[1])
     )[id2];
   }
   else if (mode === 'vertex') {
     vertex = [id];
-    edge = eList.filter( e => e.includes(vertex[0]) )[id2];
-    face = fList.find(
+    edge = edgeList.filter(e => e.includes(vertex[0]))[id2];
+    face = faceList.find(
       f => f.includes(edge[0]) && f.includes(edge[1])
     );
   }
 
-  face   = vecToElement(source, face);
-  edge   = vecToElement(source, edge);
+  face = vecToElement(source, face);
+  edge = vecToElement(source, edge);
   vertex = vecToElement(source, vertex);
   return [vertex, edge, face];
 }
 
 // 由模板和 mode 名称 生成 对齐向量
 export function getModeVector(source, modes, ...ids) {
-  const [vList, eList, fList] = source;
-
   let mode, mode2 = undefined;
   if (typeof modes === 'string') {
     mode = modes; // modes: 字符串
@@ -261,8 +273,11 @@ export function getModeVector(source, modes, ...ids) {
   }
 }
 
-// ---- 2. 旋转 (Rotator) 矩阵 生成函数 ----
-export function Rotator(aSource=[,,], bSource=[,,], aMode='identity', bMode=[,], ...ids) {
+/**
+ * 2. 旋转 (Rotator) 矩阵 生成函数
+ * @returns {THREE.Matrix4} - 旋转矩阵
+ */
+export function Rotator(aSource = [, ,], bSource = [, ,], aMode = 'identity', bMode = [,], ...ids) {
   // source 是顶点集、棱集和面集的集合
   // aSource: 形状对称群, bSource: 旋转对称群
 
@@ -301,25 +316,28 @@ export function Rotator(aSource=[,,], bSource=[,,], aMode='identity', bMode=[,],
     arv.x, auv.x, atv.x, 0,
     arv.y, auv.y, atv.y, 0,
     arv.z, auv.z, atv.z, 0,
-    0,     0,     0,     1,
+    0, 0, 0, 1,
   );
   // 目标系 矩阵
   const bAxis = new THREE.Matrix4().set(
     brv.x, buv.x, btv.x, 0,
     brv.y, buv.y, btv.y, 0,
     brv.z, buv.z, btv.z, 0,
-    0,     0,     0,     1,
+    0, 0, 0, 1,
   )
 
   // B × A⁻¹ 得到 旋转矩阵
   return bAxis.clone().multiply(aAxis.clone().invert());
 }
 
-// ---- 3. 平移 (Translator) 矩阵 生成函数 ----
-export function Translator(aSource=[,,], bSource=[,,], aMode='', bMode='identity', k=1, id) {
+/**
+ * 3. 平移 (Translator) 矩阵 生成函数
+ * @returns {THREE.Matrix4} - 平移矩阵
+ */
+export function Translator(aSource = [, ,], bSource = [, ,], aMode = '', bMode = 'identity', k = 1, id) {
   // aSource: 形状对称群, bSource: 方向对称群
 
-  if(bMode === 'identity') {
+  if (bMode === 'identity') {
     return new THREE.Matrix4().set(
       1, 0, 0, 0,
       0, 1, 0, 0,
@@ -365,9 +383,4 @@ export function Translator(aSource=[,,], bSource=[,,], aMode='', bMode='identity
     0, 0, 1, vec.z,
     0, 0, 0, 1,
   );
-}
-
-// ---- addTranslator() ----
-export function addTranslator(bSource, mode, ...ids) {
-
 }

@@ -1,4 +1,4 @@
-# Welcome to *Polytope Home*!
+# Welcome to *Polytopes' Home*!
 欢迎来到 <mark>*络琪 玩具厂*</mark> !
 
 - Personal *magical* works~ ₍^˶ ╸𖥦  ╸˵^₎⟆\
@@ -13,11 +13,11 @@
 第一次提交于 **2026.10.4** (◍•ᴗ•◍)
 
 <kbd>What is it?</kbd> \
-A visual and interactive project dedicated to the <mark>120-cell</mark>~ \
-目前服务于 <mark>正 120 胞体</mark> 的可视化交互项目 ~ 
+A visual and interactive project dedicated to the <mark>Highly Symmetric Polytope</mark>~ \
+目前服务于 <mark>高对称多胞体</mark> 的可视化交互项目 ~ 
 
-## 120-cell · 3D-engine
-<mark>正 120 胞体的 3D 引擎</mark>
+## Highly Symmetric Polytope · 3D-engine
+<mark>高对称多胞体 的 3D 引擎</mark>
 
 <kbd>How do I make it?</kbd> \
 Hand-derived ***math*** · AI-assisted ***code*** \
@@ -33,8 +33,8 @@ Hand-derived ***math*** · AI-assisted ***code*** \
 - [x] 引入 交互按钮 (10.17)
 - [x] 引入 多场景切换按钮 (10.17)
 - [x] [**拆分 工程文件**](./开发日志.md#v007-modularize) (10.24)
-- [x] 正在实践 RGP (Regular Polytope) 协议
-- [x] 正在尝试实现 通用的 高对称多胞形对称群 自动化计算
+- [x] 初步实现 通用的 高对称多胞形对称群 自动化计算
+- [x] 初步实践 面向 经典正多胞形 (Classical Regular Polytopes, CRPs) 的 通用化建模方法论 (Methodology)
 - [ ] 重构 平移函数
 - [ ] 其他 页面美术设计
 - [ ] 其他 可读性·可复用 的需求

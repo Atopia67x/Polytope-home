@@ -10,10 +10,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { spawnedGroupsC, spawnedGroupsF, spawnedGroupsV } from './core/renderer.js';
 
 // 引入 创建视图环境
-import { 
-  createViewEnvironment, 
-  initFocusControls, 
-  initWindowResize 
+import {
+  createViewEnvironment,
+  initFocusControls,
+  initWindowResize
 } from './core/sceneSetup.js';
 
 // 引入 相机旋转
@@ -64,9 +64,9 @@ function makeControls(camera) {
   c.dampingFactor = 0.1;
   c.target.set(0, 0, 0);
   c.mouseButtons = {
-    LEFT:   THREE.MOUSE.ROTATE,
+    LEFT: THREE.MOUSE.ROTATE,
     MIDDLE: THREE.MOUSE.PAN,
-    RIGHT:  THREE.MOUSE.PAN,
+    RIGHT: THREE.MOUSE.PAN,
   };
   return c;
 }
@@ -109,7 +109,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 //showPoints([[0, 100, 100]], WHITE) // ???
 makeVScene(targetV);
 //makeFScene(targetF);
-makeNewScene([4, 3], ['x', 'x', 'x'], targetF)
+makeNewScene([5, 3], ['x', 'x', 'x'], targetF)
 
 // 初始化录制 与 相机自动旋转
 setupRecorder(renderer, cameraC, controlsC);
@@ -119,8 +119,8 @@ updateHint();
 // ============================================================
 // c.1. 全局 状态切换
 // ============================================================
-const sliderC   = document.getElementById('sliderC');
-const rangeC    = document.getElementById('range-c');
+const sliderC = document.getElementById('sliderC');
+const rangeC = document.getElementById('range-c');
 const rangeCVal = document.getElementById('range-c-val');
 
 let sliderCount = parseInt(rangeC.value, 10);
@@ -134,7 +134,7 @@ function setMode(mode) {
   // 1. 离开当前模式: 停建造循环、禁用当前模式的 controls
   if (currentMode === 'C') {
     // 如果是主动离开 C，停掉后台的 act 循环，但保留已经生成好的模型
-    stopAct(); 
+    stopAct();
     controlsC.enabled = false;
     controlsC.update();
   }
@@ -145,7 +145,7 @@ function setMode(mode) {
   else if (currentMode === 'V') {
     controlsV.enabled = false;
     controlsV.update();
-  } 
+  }
 
   // 2. 进入新模式
   if (mode === 'C') {
@@ -153,12 +153,12 @@ function setMode(mode) {
     if (!getIsRotating()) {
       controlsC.enabled = true;
     }
-    
+
     labelRendererC.domElement.style.display = '';
     labelRendererF.domElement.style.display = 'none';
     labelRendererV.domElement.style.display = 'none';
     sliderC.style.display = '';
-    
+
     // 只有当 C 场景真的是空的时候 (首次加载), 才触发分帧构建
     if (spawnedGroupsC.length === 0) {
       if (sliderActive) {
@@ -167,7 +167,7 @@ function setMode(mode) {
         startAct(sleep, targetC);
       }
     }
-  } 
+  }
   else if (mode === 'F') {
     // 进入 F: 复用顶层已生成的 F 场景内容, 启用 controlsF
     controlsF.enabled = true;
@@ -176,7 +176,7 @@ function setMode(mode) {
     labelRendererF.domElement.style.display = '';
     labelRendererV.domElement.style.display = 'none';
     sliderC.style.display = 'none';
-  } 
+  }
   else if (mode === 'V') {
     // 进入 V: 复用顶层已生成的 F 场景内容, 启用 controlsV
     controlsV.enabled = true;
@@ -228,7 +228,7 @@ function animate() {
   const isV = currentMode === 'V';
   const isF = currentMode === 'F';
 
-  const scene  = isF ? sceneF  : (isV ? sceneV  : sceneC);
+  const scene = isF ? sceneF : (isV ? sceneV : sceneC);
   const camera = isF ? cameraF : (isV ? cameraV : cameraC);
 
   if (isV) {

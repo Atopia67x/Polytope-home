@@ -11,11 +11,13 @@ import * as THREE from 'three';
 
 import assert from 'node:assert';
 import {
+  get3DReflectionMatrices,
+  get3DReflectionNormalVecs,
   get3DBasicVec,
 } from '../js/core/polytopeGeometry.js';
 
 import {
-  //makeSymmetryGroupList,
+  makeSymmetryGroupList,
   buildPoset
 } from '../js/core/polytopeSymmetry.js';
 
@@ -153,12 +155,23 @@ function showSymmetryGroupList(schlafli, k) {
 }
 
 //console.log(buildPoset([4, 3])(get3DBasicVec([4, 3], ['x', 'x', 'x'])));
-//console.log(makeSymmetryGroupList([4, 3], 1))
+console.log(makeSymmetryGroupList([4, 4], 0))
+console.log("martices: ", get3DReflectionMatrices([4, 4]));
 
-const schlafli = [4, 3], rings = ['x', 'x', 'x'];
+
+//console.log(get3DBasicVec([4, 4], ['x', 'o', 'o']))
+//console.log(get3DReflectionMatrices([4, 4]))
+
+//cleanPoset(poset)
+
+
+/*const schlafli = [4, 4], rings = ['x', 'o', 'o'];
 const basicVec = get3DBasicVec(schlafli, rings);
+console.log("basicVec", basicVec);
+console.log("main_normalvec", get3DReflectionNormalVecs([4, 4]))
 const builder = buildPoset(schlafli);
 console.log(`未去重 Poset: `, schlafli, rings, builder(basicVec));
 console.log(`\n\n去重 Poset: `, schlafli, rings, cleanPoset(builder(basicVec)));
+*/
 
 console.log('\n全部测试执行完毕. ');

@@ -28,169 +28,86 @@ function isSchlafliEqual(a, b) {
 }
 
 /**
- * 生成 对称 (Symmetry) 序列群 列表
- * @param {number[]} schlafli - Schläfli 符号
- * @param {number} k 唯一的环 所在的维数
- * @returns {string[]} 对称序列群 列表 (e.g. ['', 'e', 've'])
- * 
- * e.g. (schlafli=[3, 3, 3], k=1) : o3x3o3o
- *      (schlafli=[4, 3, 3], k=3) : o4o3x3o
- * 
- * (基于直接枚举 的 临时函数, 请以具体图形为准, 2026.10.31)
- */
-function makeSymmetryGroupList(schlafli, k) {
-  if (k < 0) {
-    throw new Error(`${RED}k 需为非负整数, 实际 ${k}${RESET}`);
-  }
-  if (schlafli.length < k) {
-    throw new Error(`${RED}schlafli 长度需 >= ${k}, 实际 ${schlafli.length}${RESET}`);
-  }
-  if (isSchlafliEqual(schlafli, [])) {
-    return ['', 'v'];
-  }
-  else if (isSchlafliEqual(schlafli, [2])) {
-    if (k === 0) {
-      return ['', 'v'];
-    } else if (k === 1) {
-      return ['', 'e'];
-    }
-  }
-  else if (isSchlafliEqual(schlafli, [3])) {
-    if (k === 0) {
-      return ['', 'v', 'ev'];
-    } else if (k === 1) {
-      return ['', 'e', 've'];
-    }
-  }
-  else if (isSchlafliEqual(schlafli, [4])) {
-    if (k === 0) {
-      return ['', 'v', 'vev', 'ev'];
-    } else if (k === 1) {
-      return ['', 'e', 'eve', 've'];
-    }
-  }
-  else if (isSchlafliEqual(schlafli, [5])) {
-    if (k === 0) {
-      return ['', 'v', 'vev', 'evev', 'ev'];
-    } else if (k === 1) {
-      return ['', 'e', 'eve', 'veve', 've'];
-    }
-  } else if (isSchlafliEqual(schlafli, [3, 3])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'fev'];
-    } else if (k === 1) {
-      return ['', 'e', 'fe', 've', 'fve', 'efve'];
-    } else if (k === 2) {
-      return ['', 'f', 'ef', 'vef'];
-    }
-  } else if (isSchlafliEqual(schlafli, [4, 3])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'vev', 'fev', 'fvev', 'efvev', 'vefvev'];
-    } else if (k === 1) {
-      return ['', 'e', 'fe', 've', 'fve', 'eve', 'efve', 'feve', 'fefve', 'vefve', 'vfevfe', 'evfevfe'];
-    } else if (k === 2) {
-      return ['', 'f', 'ef', 'vef', 'evef', 'fevef'];
-    }
-  } else if (isSchlafliEqual(schlafli, [3, 4])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'fev', 'efev', 'vefev'];
-    } else if (k === 1) {
-      return ['', 'e', 'fe', 've', 'fve', 'efe', 'efve', 'feve', 'fefve', 'vefve', 'vfevfe', 'evfevfe'];
-      // 这里有一个反常的 'efe' 有待检查, 请参考 [4, 3](k===1)
-    } else if (k === 2) {
-      return ['', 'f', 'ef', 'fef', 'vef', 'fvef', 'efvef', 'fefvef'];
-    }
-  } else if (isSchlafliEqual(schlafli, [5, 3])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'vev', 'fev', 'evev', 'vfev', 'evfev', 'vevfev', 'fevfev', 'evevfev',
-        'vfevfev', 'efevfev', 'evfevfev', 'fevevfev', 'fevfevfev', 'vevfevfev', 'fvevfevfev',
-        'efvevfevfev', 'vefvevfevfev'
-      ];
-    }
-    else if (k === 1) {
-      // 待定义
-    }
-    else if (k === 2) {
-      // 待定义
-    }
-  } else if (isSchlafliEqual(schlafli, [3, 5])) {
-    // 待定义
-  } else if (isSchlafliEqual(schlafli, [3, 3, 3])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'fev', 'cfev'];
-    } else if (k === 1) {
-      // 待定义
-    } else if (k === 2) {
-      // 待定义
-    } else if (k === 3) {
-      // 待定义
-    }
-  } else if (isSchlafliEqual(schlafli, [4, 3, 3])) {
-    if (k === 0) {
-      // 待定义
-    } else if (k === 1) {
-      // 待定义
-    } else if (k === 2) {
-      // 待定义
-    } else if (k === 3) {
-      // 待定义
-    }
-  } else if (isSchlafliEqual(schlafli, [3, 3, 4])) {
-    if (k === 0) {
-      return ['', 'v', 'ev', 'fev', 'cfev', 'fcfev', 'efcfev', 'vefcfev'];
-    } else if (k === 1) {
-      // 待定义
-    } else if (k === 2) {
-      // 待定义
-    } else if (k === 3) {
-      // 待定义
-    }
-  } else if (isSchlafliEqual(schlafli, [5, 3, 3])) {
-    // ...
-  }
-  // ...
-  return Infinity;
-}
-
-// 记忆化字典
-//const symmetryGroupCache = new Map();
-
-/**
  * 生成 对称序列群 (Symmetry Sequence, SymmetrySeq) 列表 (仅适用于 n === 3 维)
  * - 基于矩阵运算的轨道枚举 (数值去重硬枚举)
+ * - 因 THREE.Vector3 · THREE.Matrix3 的不可拓展和局限性, 其他更低维度暂时手动给出
  * @param {number[]} schlafli 施莱夫利符号
  * @param {number} k 唯一环 所在的维数
  * @returns {string[]} 对称序列群 列表 (e.g. ['', 'e', 've'])
  * e.g. (schlafli=[3, 3, 3], k=1) : o3x3o3o
  *      (schlafli=[4, 3, 3], k=3) : o4o3x3o
  */
-
-/*export function makeSymmetryGroupList(schlafli, k) {
+export function makeSymmetryGroupList(schlafli, k) {
   // 发生维度
-  const n = schlafli.length;
+  const n = schlafli.length + 1;
+  if (k < 0) {
+    throw new Error(`${RED}k 需为非负整数${RESET}`);
+  } else if (k >= n) {
+    throw new Error(`${RED}k 需不大于 schlafli 的长度, 实际 (schlafli.length=${schlafli.length}, k=${k})${RESET}`);
+  }
+
+  // 暂时手动给出部分
+
+  if (isSchlafliEqual(schlafli, [])) {
+    return ['', 'v'];
+  } else if (isSchlafliEqual(schlafli, [2])) {
+    if (k === 0) {
+      return ['', 'v'];
+    } else if (k === 1) {
+      return ['', 'e'];
+    }
+  } else if (isSchlafliEqual(schlafli, [3])) {
+    if (k === 0) {
+      return ['', 'v', 'ev'];
+    } else if (k === 1) {
+      return ['', 'e', 've'];
+    }
+  } else if (isSchlafliEqual(schlafli, [4])) {
+    if (k === 0) {
+      return ['', 'v', 'vev', 'ev'];
+    } else if (k === 1) {
+      return ['', 'e', 'eve', 've'];
+    }
+  } else if (isSchlafliEqual(schlafli, [5])) {
+    if (k === 0) {
+      return ['', 'v', 'vev', 'evev', 'ev'];
+    } else if (k === 1) {
+      return ['', 'e', 'eve', 'veve', 've'];
+    }
+  } else if (isSchlafliEqual(schlafli, [6])) {
+    if (k === 0) {
+      return ['', 'v', 'vev', 'vevev', 'evev', 'ev'];
+    } else if (k === 1) {
+      return ['', 'e', 'eve', 'eveve', 'veve', 've'];
+    }
+  }
+
+  // 3D 遍历部分
   // 单环
-  const rings = new Array(n + 1).fill('o');
+  const rings = new Array(n).fill('o');
   rings[k] = 'x';
 
   // 基向量
   const basicVec = get3DBasicVec(schlafli, rings);
 
-  const dims = dimensionSymbols.slice(0, n + 1);
-  
-  const is3D = basicVec.isVector3;
+  const dims = dimensionSymbols.slice(0, n);
+
+  const is3D = basicVec.isVector3, is4D = basicVec.isVector4;
   const res = []; // 去重序列
   const seenCoords = []; // 记录已经存在的坐标
   const queue = ['']; // 从空序列开始
 
+  const EPS_Sq = EPS * EPS;
+
   // 辅助函数: 直接通过容差距离判等, 包容浮点误差
   const isCoordSeen = (vec) => {
-    const EPS_Sq = EPS * EPS;
-
+    // {NaN, NaN, NaN} => 判定相等 并忽略
+    if (!Number.isFinite(vec.x) || !Number.isFinite(vec.y) || !Number.isFinite(vec.z)) {
+      return true;
+    }
     for (const v of seenCoords) {
-      if (is3D) {
+      if (is3D || is4D) {
         if (v.distanceToSquared(vec) < EPS_Sq) return true;
-      } else {
-        if (v.distanceToSquared(vec) < EPS_Sq) return true; 
       }
     }
     return false;
@@ -207,16 +124,19 @@ function makeSymmetryGroupList(schlafli, k) {
     // 在当前序列尾部尝试加上所有允许的操作
     for (const char of dims) {
       // 剪枝: 防止连续两个相同的操作 (e.g. 'vv')
-      if (currentSeq.endsWith(char)) continue;
-      
+      if (currentSeq.startsWith(char)) continue;
+
       // 合成新序列
-      const nextSeq = currentSeq + char;
+      const nextSeq = char + currentSeq;
       const matrix = generateSymmtrySeqMatrix(schlafli, nextSeq);
-      
+
       // 计算新坐标
       const nextVec = basicVec.clone();
       if (is3D) nextVec.applyMatrix3(matrix);
-      else nextVec.applyMatrix4(matrix);
+      else if (is4D) nextVec.applyMatrix4(matrix);
+
+      const seen = isCoordSeen(nextVec);
+      console.log(`[尝试] ${nextSeq.padEnd(3)} | 坐标: (${nextVec.x.toFixed(4)}, ${nextVec.y.toFixed(4)}, ${nextVec.z.toFixed(4)}) | 是否重复: ${seen}`);
 
       // 去重: 距离在容差内, 放弃这个序列
       if (isCoordSeen(nextVec)) {
@@ -232,7 +152,7 @@ function makeSymmetryGroupList(schlafli, k) {
   }
 
   return res;
-}*/
+}
 
 /**
  * shiftSeqDim:

@@ -97,10 +97,10 @@ export function makeNewScene(schlafli, rings, target) {
     schlafli, rings,
     {
       colormode: 0,
-      colours: YELLOW_1,
+      colours: BLUE_1,
       showEdges: 1,
       showVertices: 0,
-      name: 'yellowPerfect',
+      name: 'bluePerfect',
     },
     target
   );

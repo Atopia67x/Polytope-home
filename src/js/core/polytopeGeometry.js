@@ -27,7 +27,7 @@ function clampFloat(v) {
   if (v > 1 && v - 1 < EPS) return 1; // 1 + ε => 1
   if (v < 1 && 1 - v < EPS) return 1; // 1 - ε => 1
   if (v > 0 && v < EPS) return 0; // 0 + ε => 0
-  if (v < 0 && -v < EPS) return -0; // 0 - ε => 0
+  if (v < 0 && -v < EPS) return 0; // 0 - ε => 0
   if (v > -1 && v - (-1) < EPS) return -1; // -1 + ε => -1
   if (v < -1 && (-1) - v < EPS) return -1; // -1 - ε => -1
   return v; // 正常 / 明显越界 原样
@@ -296,8 +296,18 @@ export function get3DReflectionNormalVecs(schlafli) {
   if (schlafli.length !== 2) {
     throw new Error(`${RED}schlafli 长度需为 2, 实际 ${schlafli.length}${RESET}`);
   }
+
   const affCoordVecs = get3DAffineCoordinateValues(schlafli);
-  const { v, e } = affCoordVecs;
+  let { v, e } = affCoordVecs;
+  
+  const isNaN = (!Number.isFinite(v) || !Number.isFinite(e));
+  const isZero = (Math.abs(v) === 0 && Math.abs(e) === 0);
+  if (isNaN) {
+    const emptyVec = new THREE.Vector3(NaN, NaN, NaN);
+    return [emptyVec, emptyVec, emptyVec];
+  } else if (isZero) {
+    v = e = EPS;
+  }
 
   const vV = new THREE.Vector3(0, 0, 1).normalize();
   const vE = new THREE.Vector3(0, v, -e).normalize();
@@ -315,7 +325,15 @@ export function get4DReflectionNormalVecs(schlafli) {
     throw new Error(`${RED}schlafli 长度需为 3, 实际 ${schlafli.length}${RESET}`);
   }
   const affCoordVecs = get4DAffineCoordinateValues(schlafli);
-  const { v, e, f } = affCoordVecs;
+  let { v, e, f } = affCoordVecs;
+  const isNaN = (!Number.isFinite(v) || !Number.isFinite(e) || !Number.isFinite(f));
+  const isZero = (Math.abs(v) === 0 && Math.abs(e) === 0 && Math.abs(f) === 0);
+  if (isNaN) {
+    const emptyVec = new THREE.Vector4(NaN, NaN, NaN, NaN);
+    return [emptyVec, emptyVec, emptyVec, emptyVec];
+  } else if (isZero) {
+    v = e = f = EPS;
+  }
 
   const vV = new THREE.Vector4(0, 0, 0, 1).normalize();
   const vE = new THREE.Vector4(0, 0, v, -e).normalize();
@@ -332,6 +350,7 @@ export function get3DReflectionMatrices(schlafli) {
   if (schlafli.length !== 2) {
     throw new Error(`${RED}schlafli 长度需为 2, 实际 ${schlafli.length}${RESET}`);
   }
+
   const schls = [1, 2].map(i => getDihedralAngle(schlafli.slice(0, i)).angle);
   // [ angle({m}), angle({m, n}) ]
 
@@ -416,12 +435,7 @@ export function get3DBasicVec(schlafli, rings) {
   // 得到 镜面法线矢量组
   const rnv = get3DReflectionNormalVecs(schlafli);
   const [vV, vE, vF] = rnv;
-
-  const M = new THREE.Matrix3().set(
-    vV.x, vV.y, vV.z,
-    vE.x, vE.y, vE.z,
-    vF.x, vF.y, vF.z
-  );
+  const isZero = (vV.x === 0 && vE.x === 0 && vF.x === EPS);
   const ringsNum = rings.map(x => {
     if (x === 'o') {
       return 0;
@@ -431,10 +445,17 @@ export function get3DBasicVec(schlafli, rings) {
       return Infinity;
     }
   });
-  const V = new THREE.Vector3(...ringsNum);
 
-  // basicVec = M⁻¹V
+  const M = new THREE.Matrix3().set(
+    vV.x, vV.y, vV.z,
+    vE.x, vE.y, vE.z,
+    vF.x, vF.y, vF.z
+  );
+  const V = new THREE.Vector3(...ringsNum);
+  
   const basicVec = V.clone().applyMatrix3(M.clone().invert());
+  if (isZero) basicVec.x = 0;
+  console.log("basicVec", schlafli, basicVec);
   return clamp(basicVec);
 }
 
@@ -472,6 +493,7 @@ export function get4DBasicVec(schlafli, rings) {
   });
   const V = new THREE.Vector4(...ringsNum);
 
+  // 还没法处理 退化情形
   // basicVec = M⁻¹V
   const basicVec = V.clone().applyMatrix4(M.clone().invert());
   return clamp(basicVec);

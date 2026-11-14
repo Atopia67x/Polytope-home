@@ -4,22 +4,27 @@
  */
 
 import * as THREE from 'three';
+
 import { WHITE, lightenColor } from '../data/constants.js';
-import { affined } from '../core/transform.js';
-import {
-  buildPoset
-} from './polytopeSymmetry.js';
+
+import { affined } from '../math/transform.js';
+
+import { VectorX } from '../math/vectorX.js';
+
 import {
   EPS, // 允许误差
-  get3DBasicVec,
-  get4DBasicVec,
-  get3DReflectionNormalVecs
-} from './polytopeGeometry.js';
+  getNDBasicVec,
+  dimensionSymbols,
+  dimensionElements
+} from '../math/polytopeGeometry.js';
 
-// spawnedGroupsC / spawnedGroupsF / spawnedGroupsV 分别记录三套场景中生成的 group
-export const spawnedGroupsC = [];
-export const spawnedGroupsF = [];
-export const spawnedGroupsV = [];
+import { buildPoset } from '../math/polytopeSymmetry.js';
+
+const DEG = 180 / Math.PI;
+const RED = '\x1b[31m';
+const GREEN = '\x1b[32m';
+const BLUE = '\x1b[34m';
+const RESET = '\x1b[0m';
 
 // 生成顶点 (?)
 // target 为 { scene, spawnedGroups } 形式的承载对象
@@ -47,7 +52,7 @@ export function showPoints(vertices, vertexColor, target) {
  * @param {Object} opts - 样式
  * @param {Object} target - { scene, spawnedGroups }
  */
-export function makeShapeFromPoset(poset, opts = {}, target) {
+export function make3DShapeFromPoset(poset, opts = {}, target) {
   const { vertexList, edgeList, faceList, cellList = [] } = poset;
   const { scene, spawnedGroups } = target;
 
@@ -72,8 +77,17 @@ export function makeShapeFromPoset(poset, opts = {}, target) {
 
   // 1. 坐标提取
   const newVertices = vertexList.map(v => {
-    // 兼容传入 Vector3 对象或 [x,y,z] 数组
-    return v.isVector3 ? [v.x, v.y, v.z] : [v[0], v[1], v[2]];
+    // 兼容传入 VectorX 对象 · Vector3 · 普通数组
+    if (v.isVectorX) {
+      return v.elements;
+    }
+    else if (v.isVector3) {
+      return [v.x, v.y, v.z];
+    }
+    else {
+      // 普通数组
+      return [v[0] || 0, v[1] || 0, v[2] || 0];
+    }
   });
 
   const group = new THREE.Group();
@@ -201,7 +215,7 @@ export function makeShapeTransformed(source, scalar, rotator, translator, opts =
     return p;
   });
   const poset = { vertexList: newVertices, edgeList, faceList };
-  return makeShapeFromPoset(poset, opts, target);
+  return make3DShapeFromPoset(poset, opts, target);
 }
 
 /**
@@ -210,87 +224,104 @@ export function makeShapeTransformed(source, scalar, rotator, translator, opts =
  */
 export function makeShapeInCRPs(schlafli, rings, opts, target) {
   const builder = buildPoset(schlafli)
-  const basicVec = get3DBasicVec(schlafli, rings);
+  const basicVec = getNDBasicVec(schlafli, rings);
   const poset = builder(basicVec);
-
-  return makeShapeFromPoset(cleanPoset(poset), opts, target);
+  return make3DShapeFromPoset(cleanPoset(poset), opts, target);
 }
 
 /**
- * 
+ * 偏序集 (Poset) 的 faceList 顶点下标化 与 去重
  * @param {Object} poset 含顶点具体坐标 的 偏序集 对象
  * @returns {Object} 去重后的 偏序集 对象
  */
 export function cleanPoset(poset) {
-  const { vertexList, edgeList, faceList, cellList = [] } = poset;
+  const dimE = dimensionSymbols.split('').map(e => dimensionElements[e]);
   const EPS_SQ = EPS * EPS;
+
+  // 识别这个偏序集包含哪些维度
+  const keys = Object.keys(poset);
+  const n = keys.length;
+  if (n < 1) return poset;
+
+  const cleanedPoset = {};
+  const oldToNewMaps = {};
 
   // ==========================================
   // 第一步: 顶点去重 (vertexList)
   // ==========================================
+  const rawVertices = poset.vertexList || [];
   const uniqueVertices = [];
-  const oldToNewV = new Array(vertexList.length).fill(-1);
+  const oldToNewV = new Array(rawVertices.length).fill(-1);
 
-  // 辅助获取坐标
-  const getVCoord = (v) => v.isVector3 ? v : new THREE.Vector3(v[0], v[1], v[2]);
+  // 辅助获取坐标 (兼容 VectorX 和 普通数组)
+  const getVCoord = (v) => v.isVectorX ? v : new VectorX(v.length || 3, v);
 
-  for (let i = 0; i < vertexList.length; i++) {
-    const p1 = getVCoord(vertexList[i]);
+  for (let i = 0; i < rawVertices.length; i++) {
+    const p1 = getVCoord(rawVertices[i]);
     let foundIdx = -1;
 
     // 在已有的唯一顶点中寻找是否重合
     for (let j = 0; j < uniqueVertices.length; j++) {
-      if (p1.distanceToSquared(uniqueVertices[j]) < EPS_SQ) {
+      const distSq = p1.sub(uniqueVertices[j]).length() ** 2;
+      if (distSq < EPS_SQ) {
         foundIdx = j;
         break;
       }
     }
 
     if (foundIdx !== -1) {
-      oldToNewV[i] = foundIdx; // 指向已有的旧点
+      oldToNewV[i] = foundIdx;
     } else {
-      uniqueVertices.push(p1.clone()); // 加入新点集
+      uniqueVertices.push(p1.clone());
       oldToNewV[i] = uniqueVertices.length - 1;
     }
   }
 
-  // ==========================================
-  // 第二步: 边去重 (edgeList), 并剔除 零长边
-  // ==========================================
-  const uniqueEdges = [];
-  const edgeMap = new Map(); // 记录 "最小点_最大点" 的组合
-  const oldToNewE = new Array(edgeList.length).fill(-1);
+  cleanedPoset.vertexList = uniqueVertices;
+  oldToNewMaps['vertexList'] = oldToNewV;
 
-  for (let i = 0; i < edgeList.length; i++) {
-    const [ov1, ov2] = edgeList[i];
+  // ==========================================
+  // 第二步: 边去重 (edgeList), 剔除零长边
+  // ==========================================
+  const rawEdges = poset.edgeList || [];
+  const uniqueEdges = [];
+  const edgeMap = new Map();
+  const oldToNewE = new Array(rawEdges.length).fill(-1);
+
+  for (let i = 0; i < rawEdges.length; i++) {
+    const [ov1, ov2] = rawEdges[i];
     const nv1 = oldToNewV[ov1];
     const nv2 = oldToNewV[ov2];
 
-    if (nv1 === nv2) continue; // 两点重合, 这是一条 零长边, 直接丢弃
+    if (nv1 === -1 || nv2 === -1 || nv1 === nv2) continue;
 
     const minV = Math.min(nv1, nv2);
     const maxV = Math.max(nv1, nv2);
     const key = `${minV}_${maxV}`;
 
     if (edgeMap.has(key)) {
-      oldToNewE[i] = edgeMap.get(key); // 映射到已存在的新边
+      oldToNewE[i] = edgeMap.get(key);
     } else {
       const newIdx = uniqueEdges.length;
-      uniqueEdges.push([minV, maxV]); // 存入新边
+      uniqueEdges.push([minV, maxV]);
       edgeMap.set(key, newIdx);
       oldToNewE[i] = newIdx;
     }
   }
 
-  // ==========================================
-  // 第三步: 面重组与去重 (faceList)
-  // ==========================================
-  const uniqueFaces = [];
-  const faceMap = new Map(); // 记录规范化后的面字符串
-  const oldToNewF = new Array(faceList.length).fill(-1);
+  cleanedPoset.edgeList = uniqueEdges;
+  oldToNewMaps['edgeList'] = oldToNewE;
 
-  for (let i = 0; i < faceList.length; i++) {
-    const oldFaceEdges = faceList[i];
+  // ==========================================
+  // 第三步: 面重组与去重 (faceList) - 顶点顺次化
+  // ==========================================
+  const rawFaces = poset.faceList || [];
+  const uniqueFaces = [];
+  const faceMap = new Map();
+  const oldToNewF = new Array(rawFaces.length).fill(-1);
+
+  for (let i = 0; i < rawFaces.length; i++) {
+    const oldFaceEdges = rawFaces[i];
     const newEdgesSet = new Set();
 
     // 收集该面内所有有效的新边
@@ -301,7 +332,7 @@ export function cleanPoset(poset) {
       }
     }
 
-    if (newEdgesSet.size < 3) continue; // 少于三条真实边，构不成多边形面
+    if (newEdgesSet.size < 3) continue;
 
     // 利用邻接表在该面内部寻找闭环
     const adj = new Map();
@@ -321,10 +352,9 @@ export function cleanPoset(poset) {
         break;
       }
     }
-
     if (startVertex === -1) continue;
 
-    // 走迷宫找环
+    // 走迷宫找环 (找第一条未用过的边)
     const orderedVerts = [];
     let curr = startVertex;
     const usedEs = new Set();
@@ -342,13 +372,13 @@ export function cleanPoset(poset) {
         }
       }
       if (!found) break;
-      if (curr === startVertex) break; // 回到了起点
+      if (curr === startVertex) break;
       steps++;
     }
 
-    // 如果成功闭环并且长度 >= 3
+    // 成功闭环且长度 >= 3
     if (orderedVerts.length >= 3 && curr === startVertex) {
-      // 规范面序列: 旋转到最小索引开头，消除顺逆时针的重复面
+      // 规范面序列: 旋转到最小索引开头, 消除顺逆时针的重复
       let minIdx = 0;
       for (let k = 1; k < orderedVerts.length; k++) {
         if (orderedVerts[k] < orderedVerts[minIdx]) minIdx = k;
@@ -375,30 +405,61 @@ export function cleanPoset(poset) {
     }
   }
 
+  cleanedPoset.faceList = uniqueFaces;
+  oldToNewMaps['faceList'] = oldToNewF;
+
   // ==========================================
-  // 第四步：重建 cellList
+  // 第四步: 重建 更高维 (cellList, teronList...)
   // ==========================================
-  const newCellList = [];
-  for (const cell of cellList) {
-    const newCellFaces = new Set();
-    for (const oldFIdx of cell) {
-      const newFIdx = oldToNewF[oldFIdx];
-      if (newFIdx !== -1) {
-        newCellFaces.add(newFIdx);
+  // 遍历所有高于 faceList 的维度 (d >= 3)
+  for (let d = 3; d < n; d++) {
+    const dimKey = `${dimE[d]}List`;
+    const rawList = poset[dimKey] || [];
+    if (rawList.length === 0) continue;
+
+    const uniqueList = [];
+    const seenSet = new Set();
+    const oldToNew = new Array(rawList.length).fill(-1);
+
+    // 低一维的映射表
+    const lowerKey = `${dimE[d - 1]}List`;
+    const lowerMap = oldToNewMaps[lowerKey];
+
+    for (let i = 0; i < rawList.length; i++) {
+      const item = rawList[i];
+      const mappedElements = new Set();
+
+      for (const lowIdx of item) {
+        if (lowerMap && lowerMap[lowIdx] !== undefined) {
+          const newIdx = lowerMap[lowIdx];
+          if (newIdx !== -1) {
+            mappedElements.add(newIdx);
+          }
+        }
+      }
+
+      // 高维单体如果内部元素少于 3 个, 丢弃
+      if (mappedElements.size < (d === 3 ? 4 : 3)) continue;
+
+      // 排序拼接作为唯一 Key
+      const sortedElements = [...mappedElements].sort((a, b) => a - b);
+      const uniqueKey = sortedElements.join(',');
+
+      if (seenSet.has(uniqueKey)) {
+        oldToNew[i] = uniqueList.findIndex(u => u.join(',') === uniqueKey);
+      } else {
+        const newIdx = uniqueList.length;
+        uniqueList.push(sortedElements);
+        seenSet.add(uniqueKey);
+        oldToNew[i] = newIdx;
       }
     }
-    if (newCellFaces.size > 0) {
-      newCellList.push([...newCellFaces]);
-    }
+
+    cleanedPoset[dimKey] = uniqueList;
+    oldToNewMaps[dimKey] = oldToNew;
   }
 
-  // 返回干净的新对象
-  return {
-    vertexList: uniqueVertices,
-    edgeList: uniqueEdges,
-    faceList: uniqueFaces,
-    cellList: newCellList
-  };
+  return cleanedPoset;
 }
 
 // 删除名为 name 的对象

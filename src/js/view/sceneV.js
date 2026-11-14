@@ -1,5 +1,5 @@
 /**
- * 文件: js/views/sceneV.js
+ * 文件: js/view/sceneV.js
  * 实现 生成 120cell-V 场景的几何对象
  */
 
@@ -7,7 +7,7 @@ import { PHI, PH2, SQ5, SQ3, SQ2, SQ8, colorSet1 } from '../data/constants.js';
 const [YELLOW_1, GREEN_1, BLUE_1, PURPLE_1, WHITE] = colorSet1;
 
 import { Doe, Tet } from '../data/shapes.js';
-import { Scalar, Rotator, Translator } from '../core/transform.js';
+import { Scalar, Rotator, Translator } from '../math/transform.js';
 import { makeShapeTransformed } from '../core/renderer.js';
 
 // 260605 试验
@@ -35,8 +35,7 @@ export function makeTet(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 1) {
+  } else if (layer === 1) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'vertex', SQ5 / SQ8),
@@ -51,8 +50,7 @@ export function makeTet(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 2) {
+  } else if (layer === 2) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'edge', 1 / SQ2),
@@ -67,8 +65,7 @@ export function makeTet(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 3) {
+  } else if (layer === 3) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'triconvergency', SQ3 / SQ8),

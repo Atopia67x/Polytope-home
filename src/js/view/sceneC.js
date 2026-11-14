@@ -1,5 +1,5 @@
 /**
- * 文件: js/views/sceneC.js
+ * 文件: js/view/sceneC.js
  * 实现 生成 120cell-C 场景的几何对象与建造逻辑
  * 建造过程 · 删除过程 · 增量更新 · 建造循环
  */
@@ -8,8 +8,8 @@ import { PHI, SQ5, PH2, colorSet1 } from '../data/constants.js';
 const [YELLOW_1, GREEN_1, BLUE_1, PURPLE_1, WHITE] = colorSet1;
 
 import { Doe } from '../data/shapes.js';
-import { Scalar, Rotator, Translator } from '../core/transform.js';
-import { makeShapeTransformed, deletes, spawnedGroupsC } from '../core/renderer.js';
+import { Scalar, Rotator, Translator } from '../math/transform.js';
+import { makeShapeTransformed, deletes } from '../core/renderer.js';
 
 const startList = [
   [4, 10], [4, 11], [4, 12], [4, 13], [4, 14],
@@ -39,8 +39,6 @@ let shownCountC = 0;
 
 // 新建 Doe (261010 重构)
 function makeDoe(layer, target, id) {
-  let scale, rotate, translate;
-  
   if (layer === 0) {
     return makeShapeTransformed(
       Doe,
@@ -56,8 +54,7 @@ function makeDoe(layer, target, id) {
       },
       target,
     );
-  }
-  else if (layer === 1) {
+  } else if (layer === 1) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'face', PHI / 2),
@@ -72,8 +69,7 @@ function makeDoe(layer, target, id) {
       },
       target,
     );
-  }
-  else if (layer === 2) {
+  } else if (layer === 2) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'vertex', 1 / 2),
@@ -88,8 +84,7 @@ function makeDoe(layer, target, id) {
       },
       target,
     );
-  }
-  else if (layer === 3) {
+  } else if (layer === 3) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'face', 1 / 2 / PHI),
@@ -104,8 +99,7 @@ function makeDoe(layer, target, id) {
       },
       target,
     );
-  }
-  else if (layer === 4) {
+  } else if (layer === 4) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'edge', 0),
@@ -185,7 +179,7 @@ export function renderCIncremental(n, target) {
   const count = Math.max(0, Math.min(n, showList.length));
 
   // 若 C 场景为空, 先补上 startList 的初始项
-  if (spawnedGroupsC.length === 0) {
+  if (target.spawnedGroups.length === 0) {
     for (const [k, i] of startList) {
       makeDoe(k, target, i);
     }
@@ -223,7 +217,7 @@ export async function act(myToken, sleep, target) {
     if (!isValid()) break;
     await sleep(500);
     if (!isValid()) break;
-    await rewind(sleep, target, 200, isValid);
+    await rewind(sleep, 200, isValid, target);
     if (!isValid()) break;
     await sleep(500);
   }

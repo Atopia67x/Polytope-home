@@ -1,5 +1,5 @@
 /**
- * 文件: js/views/sceneF.js
+ * 文件: js/view/sceneF.js
  * 实现 生成 120cell-F 场景的几何对象
  */
 
@@ -7,7 +7,7 @@ import { PHI, PH2, SQ1P2, colorSet1 } from '../data/constants.js';
 const [YELLOW_1, GREEN_1, BLUE_1, PURPLE_1, WHITE] = colorSet1;
 
 import { Doe, Peg } from '../data/shapes.js';
-import { Scalar, Rotator, Translator } from '../core/transform.js';
+import { Scalar, Rotator, Translator } from '../math/transform.js';
 import { makeShapeTransformed, makeShapeInCRPs } from '../core/renderer.js';
 
 export function makePegs(layer, target, ...ids) {
@@ -34,8 +34,7 @@ export function makePegs(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 1) {
+  } else if (layer === 1) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'edge', PHI / SQ1P2),
@@ -50,8 +49,7 @@ export function makePegs(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 2) {
+  } else if (layer === 2) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'edge', 1 / SQ1P2),
@@ -66,8 +64,7 @@ export function makePegs(layer, target, ...ids) {
       },
       target,
     );
-  }
-  else if (layer === 3) {
+  } else if (layer === 3) {
     return makeShapeTransformed(
       Doe,
       Scalar(Doe, 'biconvergency', 1 / SQ1P2),
@@ -90,18 +87,4 @@ export function makeFScene(target) {
   makePegs(1, target, 0); makePegs(1, target, 1); makePegs(1, target, 2); makePegs(1, target, 3); makePegs(1, target, 4);
   makePegs(2, target, 0); makePegs(2, target, 1); makePegs(2, target, 2); makePegs(2, target, 3); makePegs(2, target, 4);
   makePegs(3, target, 0, 0); makePegs(3, target, 0, 1); makePegs(3, target, 1, 0); makePegs(3, target, 1, 1);
-}
-
-export function makeNewScene(schlafli, rings, target) {
-  return makeShapeInCRPs(
-    schlafli, rings,
-    {
-      colormode: 0,
-      colours: BLUE_1,
-      showEdges: 1,
-      showVertices: 0,
-      name: 'bluePerfect',
-    },
-    target
-  );
 }
